@@ -1,5 +1,6 @@
 #include <TH1D.h>
 #include <TCanvas.h>
+#include <TLegend.h>
 #include <fstream>
 #include <iostream>
 #include <TMath.h>
@@ -28,7 +29,7 @@ void task13()
     Int_t nbins = (E_max - E_min) / E_step;
     
 
-    auto hist = new TH1D("Hist", "Hist", nbins, E_min, E_max);
+    auto hist = new TH1D("Hist", "Invariant mass of 3#pi, GeV/c^{2}; m_{3#pi}", nbins, E_min, E_max);
 
     Double_t input = 0;
     std::ifstream file("m3piJPSI_cut.dat");
@@ -41,24 +42,62 @@ void task13()
     Conv->SetRange(0, E_max + E_max);
     Conv->SetNofPointsFFT(5000);
 
-    TF1 *fit_func = new TF1("fit", *Conv, E_min, E_max, 6);
-    fit_func->SetParameter(0,   1.83170e+01);
-    fit_func->SetParameter(1,  1.00000e+03);
-    fit_func->SetParameter(2, -1.00000e+03);
-    fit_func->SetParameter(3, -1.60913e+00);
-    fit_func->SetParameter(4, 4.34670e-03);
-    fit_func->SetParameter(5, 1.17265e-02);
+    TF1Convolution *Conv1 = new TF1Convolution(BW_plus_linear_func, dopel_gaus_func, E_min, E_max, true);
+    Conv1->SetRange(0, E_max + E_max);
+    Conv1->SetNofPointsFFT(1000);
 
+    TF1Convolution *Conv2 = new TF1Convolution(BW_plus_linear_func, dopel_gaus_func, E_min, E_max, true);
+    Conv2->SetRange(0, E_max + E_max);
+    Conv2->SetNofPointsFFT(3000);
+
+    TF1 *fit_func = new TF1("fit", *Conv, E_min, E_max, 6);
+    TF1 *fit_func1 = new TF1("fit1", *Conv1, E_min, E_max, 6);
+    TF1 *fit_func2 = new TF1("fit2", *Conv2, E_min, E_max, 6);
+    fit_func->SetLineColor(kRed);
+    fit_func1->SetLineColor(kBlue);
+    fit_func2->SetLineColor(kGreen);
+
+    Double_t f_param[6] = {1.83170e+01, 1.00000e+03, -1.00000e+03, -1.60913e+00, 4.34670e-03, 1.17265e-02};
+    Double_t f1_param[6] = {1, 1, -1, -1, 4, 1};
+    Double_t f2_param[6] = {1.83170e+01, 1.00000e+03, -1.00000e+03, -1.60913e+00, 4.34670e-03, 1.17265e-02};
+    fit_func->SetParameters(f_param);
+    fit_func1->SetParameters(f1_param);
+    fit_func2->SetParameters(f2_param);
 
     fit_func->SetParLimits(0, -1000, 1000);
-    fit_func->SetParLimits(1, -1000, 100000000);
-    fit_func->SetParLimits(2, -1000, 100000000);
+    fit_func->SetParLimits(1, -1000, 100000);
+    fit_func->SetParLimits(2, -1000, 100000);
     fit_func->SetParLimits(3, -1000, 1000);
     fit_func->SetParLimits(4, -1000, 1000);
     fit_func->SetParLimits(5, -1000, 1000);
 
+    fit_func1->SetParLimits(0, -1000, 1000);
+    fit_func1->SetParLimits(1, -1000, 1000);
+    fit_func1->SetParLimits(2, -1000, 1000);
+    fit_func1->SetParLimits(3, -1000, 1000);
+    fit_func1->SetParLimits(4, -1000, 1000);
+    fit_func1->SetParLimits(5, -1000, 1000);
+
+    fit_func2->SetParLimits(0, -1000, 1000);
+    fit_func2->SetParLimits(1, -1000, 1000);
+    fit_func2->SetParLimits(2, -1000, 1000);
+    fit_func2->SetParLimits(3, -1000, 1000);
+    fit_func2->SetParLimits(4, -1000, 1000);
+    fit_func2->SetParLimits(5, -1000, 1000);
+
+
     auto canvas = new TCanvas("Canvas", "Canvas", 800, 600);
+    auto legend = new TLegend();
+    legend->AddEntry(fit_func, "5000 points", "l"); 
+    legend->AddEntry(fit_func1, "1000 points", "l"); 
+    legend->AddEntry(fit_func2, "3000 points", "l"); 
     auto fit = hist->Fit("fit");
+    auto fit1 = hist->Fit("fit1", "+");
+    auto fit2= hist->Fit("fit2", "+");
     canvas->SetLogy();
     hist->Draw();
+    legend->Draw();
+
+
+ 
 }
